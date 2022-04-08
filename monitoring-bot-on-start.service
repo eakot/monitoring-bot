@@ -1,12 +1,18 @@
 [Unit]
 Description=Send on boot message to telegram monitoring bot
-After=syslog.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 PrivateTmp=true
 User=kotelnikov
+ExecStartPre=/bin/sleep 30
 Type=forking
-ExecStart=python3 ~/github/monitoring-bot/src/on_boot.py
+ExecStart=curl -s -X POST https://api.telegram.org/bot5263324187:AAEzg4JaT-rDQYPHXc200RrSV90RpYK8rKE/sendMessage -d chat_id=168421237 -d text="Server started 30s ago"
+
+
+
+
 
 [Install]
 WantedBy=multi-user.target
