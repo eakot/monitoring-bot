@@ -1,0 +1,13 @@
+[Unit]
+Description=Send on boot message to telegram monitoring bot
+After=syslog.target
+
+[Service]
+PrivateTmp=true
+User=kotelnikov
+Type=forking
+ExecStart=python3 ~/github/monitoring-bot/src/on_boot.py
+
+[Install]
+WantedBy=multi-user.target
+
