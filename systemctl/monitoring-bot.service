@@ -1,0 +1,16 @@
+[Unit]
+Description=Start telegram monitoring bot
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+PrivateTmp=true
+Type=forking
+User=kotelnikov
+WorkingDirectory=/home/kotelnikov/github/monitoring-bot
+ExecStartPre=/bin/sleep 3
+ExecStart=/home/kotelnikov/.local/bin/poetry run python3 /home/kotelnikov/github/monitoring-bot/src/bot.py
+
+[Install]
+WantedBy=multi-user.target
+

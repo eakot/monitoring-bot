@@ -6,17 +6,23 @@ import subprocess
 import sys
 import shlex
 import datetime
+import logging
+
 from subprocess import Popen, PIPE
 from telegram.ext import CommandHandler
-from imp import reload
+from importlib import reload
 
-from telegram.ext import Updater
+from telegram.ext import Updater, CallbackContext
+from telegram import Update
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 bot = telegram.Bot(token=config.token)
 # Проверка бота
-print(bot.getMe())
+print(bot.get_me())
 
-updater = Updater(token=config.token)
+updater = Updater(token=config.token, use_context=True)
 dispatcher = updater.dispatcher
 
 
@@ -37,105 +43,71 @@ def run_command(command):
     return rc
 
 
-def start(bot, update):
-    bot.sendMessage(chat_id=update.message.chat_id, text="Привет, я бот, жду команды")
+def start(update: Update, context: CallbackContext):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
 
 
-def help(bot, update):
+def help(update: Update, context: CallbackContext):
     reload(config)
-    bot.sendMessage(chat_id=update.message.chat_id, text='''список доступных команд:
-  /apachestatus - нагрузка на сервере
+    context.bot.send_message(chat_id=update.message.chat_id, text='''список доступных команд:
   /id - id пользователя
   /ifconfig - сетевые настройки
   /df - информация о дисковом пространстве (df -h)
   /free - информация о памяти
   /mpstat - информация о нагрузке на процессор
-  /dir1 - объем папки''' + config.dir1 + '''
-  /dirbackup - размер файла бэкапа за текущий день в папке ''' + config.dir_backup + '''
 
   ''')
 
 
 # функция команады id
-def myid(bot, update):
+def myid(update: Update, context: CallbackContext):
     userid = update.message.from_user.id
-    bot.sendMessage(chat_id=update.message.chat_id, text=userid)
+    context.bot.send_message(chat_id=update.message.chat_id, text=userid)
 
 
 # функция команады ifconfig
-def ifconfig(bot, update):
+def ifconfig(update: Update, context: CallbackContext):
     reload(config)
     user = str(update.message.from_user.id)
     if user in config.admin:  # если пользовательский id в списке admin то команда выполняется
         run_command("ifconfig")
-        bot.sendMessage(chat_id=update.message.chat_id, text=textoutput)
+        context.bot.send_message(chat_id=update.message.chat_id, text=textoutput)
 
 
 # функция команады df
-def df(bot, update):
+def df(update: Update, context: CallbackContext):
     reload(config)
     user = str(update.message.from_user.id)
     if user in config.admin:  # если пользовательский id в списке admin то команда выполняется
         run_command("df -h")
-        bot.sendMessage(chat_id=update.message.chat_id, text=textoutput)
+        context.bot.send_message(chat_id=update.message.chat_id, text=textoutput)
 
 
 # функция команады free
-def free(bot, update):
+def free(update: Update, context: CallbackContext):
     reload(config)
     user = str(update.message.from_user.id)
     if user in config.admin:  # если пользовательский id в списке admin то команда выполняется
         run_command("free -m")
-        bot.sendMessage(chat_id=update.message.chat_id, text=textoutput)
+        context.bot.send_message(chat_id=update.message.chat_id, text=textoutput)
 
 
 # функция команады mpstat
-def mpstat(bot, update):
+def mpstat(update: Update, context: CallbackContext):
     reload(config)
     user = str(update.message.from_user.id)
     if user in config.admin:  # если пользовательский id в списке admin то команда выполняется
         run_command("mpstat")
-        bot.sendMessage(chat_id=update.message.chat_id, text=textoutput)
+        context.bot.send_message(chat_id=update.message.chat_id, text=textoutput)
 
 
 # функция команады top
-def apachestatus(bot, update):
+def apachestatus(update: Update, context: CallbackContext):
     reload(config)
     user = str(update.message.from_user.id)
     if user in config.admin:  # если пользовательский id в списке admin то команда выполняется
         run_command("apachestatus")
-        bot.sendMessage(chat_id=update.message.chat_id, text=textoutput)
-
-
-# функция команады dir1
-def dir1(bot, update):
-    reload(config)
-    user = str(update.message.from_user.id)
-    if user in config.admin:  # если пользовательский id в списке admin то команда выполняется
-        dir1_command = "du -sh " + config.dir1
-        run_command(dir1_command)
-        bot.sendMessage(chat_id=update.message.chat_id, text=textoutput)
-
-
-# функция команады dirbackup - проверяет наличие файла по дате
-def dirbackup(bot, update):
-    reload(config)
-    user = str(update.message.from_user.id)
-    if user in config.admin:  # если пользовательский id в списке admin то команда выполняется
-        now_date = datetime.date.today()  # Текущая дата
-        cur_year = str(now_date.year)  # Год текущий
-        cur_month = now_date.month  # Месяц текущий
-        if cur_month < 10:
-            cur_month = str(now_date.month)
-            cur_month = '0' + cur_month
-        else:
-            cur_month = str(now_date.month)
-        cur_day = str(now_date.day)  # День текущий
-        filebackup = config.dir_backup + cur_year + '-' + cur_month + '-' + cur_day + '.03.00.co.7z'  # формируем имя файла для поиска
-        print(filebackup)
-        filebackup_command = "ls -lh " + filebackup
-        run_command(filebackup_command)
-        bot.sendMessage(chat_id=update.message.chat_id, text=textoutput)
+        context.bot.send_message(chat_id=update.message.chat_id, text=textoutput)
 
 
 start_handler = CommandHandler('start', start)
@@ -152,15 +124,6 @@ dispatcher.add_handler(free_handler)
 
 mpstat_handler = CommandHandler('mpstat', mpstat)
 dispatcher.add_handler(mpstat_handler)
-
-apachestatus_handler = CommandHandler('apachestatus', apachestatus)
-dispatcher.add_handler(apachestatus_handler)
-
-dir1_handler = CommandHandler('dir1', dir1)
-dispatcher.add_handler(dir1_handler)
-
-dirbackup_handler = CommandHandler('dirbackup', dirbackup)
-dispatcher.add_handler(dirbackup_handler)
 
 myid_handler = CommandHandler('id', myid)
 dispatcher.add_handler(myid_handler)

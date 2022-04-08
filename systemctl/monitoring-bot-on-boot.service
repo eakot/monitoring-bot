@@ -10,10 +10,6 @@ ExecStartPre=/bin/sleep 30
 Type=forking
 ExecStart=curl -s -X POST https://api.telegram.org/bot5263324187:AAEzg4JaT-rDQYPHXc200RrSV90RpYK8rKE/sendMessage -d chat_id=168421237 -d text="Server started 30s ago"
 
-
-
-
-
 [Install]
 WantedBy=multi-user.target
 
